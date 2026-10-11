@@ -20,7 +20,7 @@
         }
 
         .container {
-            max-width: 480px;
+            max-width: 600px;
             margin: 0 auto;
         }
 
@@ -55,18 +55,18 @@
             margin-bottom:24px;
         }
 
-        /* 卡牌容器 */
+        /* 卡牌容器，自动自适应网格 */
         .card-wrap {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            margin: 40px 0;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 14px;
+            margin: 30px 0;
             perspective: 1000px;
         }
 
         /* 卡牌核心3D样式 */
         .card-item {
-            height: 140px;
+            height: 120px;
             position: relative;
             transform-style: preserve-3d;
             transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -82,11 +82,11 @@
             position: absolute;
             width: 100%;
             height: 100%;
-            border-radius: 16px;
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            font-size: 26px;
             font-weight: bold;
             box-shadow: 0 8px 20px #00000020;
             backface-visibility: hidden;
@@ -175,26 +175,12 @@
         <div class="info-bar">
             <div>当前关卡：<span id="level">1</span></div>
             <div>最高纪录：<span id="highScore">1</span></div>
+            <div>卡牌数量：<span id="cardCount">2</span></div>
         </div>
         <button class="btn-rule" onclick="openRule()">📖游戏规则</button>
-        <div class="tip-text">选择一张卡牌，小心炸弹💣</div>
-        <div class="card-wrap">
-            <div class="card-item" onclick="pick('A', this, event)">
-                <div class="card-front">A</div>
-                <div class="card-back">⭐ A</div>
-            </div>
-            <div class="card-item" onclick="pick('B', this, event)">
-                <div class="card-front">B</div>
-                <div class="card-back">🍀 B</div>
-            </div>
-            <div class="card-item" onclick="pick('C', this, event)">
-                <div class="card-front">C</div>
-                <div class="card-back">💎 C</div>
-            </div>
-            <div class="card-item" onclick="pick('D', this, event)">
-                <div class="card-front">D</div>
-                <div class="card-back">💣 D</div>
-            </div>
+        <div class="tip-text">选择一张卡牌翻开，小心炸弹💣</div>
+        <div class="card-wrap" id="cardWrap">
+            <!-- JS动态生成卡牌 -->
         </div>
         <div class="result" id="msg"></div>
     </div>
@@ -203,19 +189,19 @@
     <div class="modal" id="ruleModal">
         <div class="modal-content">
             <h3>📖 游戏规则</h3>
-            <p>1. 四张卡牌，选一张翻开。<br>
-2. ⭐🍀💎=闯关成功，升级；💣炸弹=失败，本关重开。<br>
-3. 每5关随机触发彩蛋，获得特殊增益。<br>
-4. 关卡越高，炸弹概率越高，挑战你的运气！</p >
+            <p>1. 第1关2张牌，每通关一关卡牌+2，最多24张<br>
+2. ⭐🍀💎=闯关成功；💣炸弹=失败，本关重开<br>
+3. 卡牌越多炸弹数量越多，类似扫雷<br>
+4. 每5关随机触发彩蛋，获得特殊增益。</p >
             <button class="close-modal" onclick="closeRule()">知道啦</button>
         </div>
     </div>
 
     <script>
         let level = 1;
-        let bombChance = 0.25;
         let eggActive = false;
         let isClicking = false;
+        let cardList = []; //存储当前关卡卡牌内容
 
         // ===== 扩充颜文字库 =====
         const successEmoji = [
@@ -243,18 +229,72 @@
             "树懒觉得你超棒！ヾ(≧▽≦*)o"
         ]
 
+        // 幸运图标
+        const luckyIcons = ["⭐","🍀","💎"];
+
         // 读取本地存档最高分
         let highScore = localStorage.getItem("luckyCardHigh") || 1;
         document.getElementById("highScore").innerText = highScore;
+
+        // 初始化当前关卡卡牌
+        function initLevel(){
+            //卡牌数量：第1关2张，每关+2，上限24
+            const maxCard = 24;
+            const cardCount = Math.min(2 + (level-1)*2, maxCard);
+            document.getElementById("cardCount").innerText = cardCount;
+            document.getElementById("level").innerText = level;
+
+            //炸弹比例：卡牌总数 * 0.25，至少1个炸弹
+            let bombNum = Math.max(1, Math.floor(cardCount * 0.25));
+            let luckyNum = cardCount - bombNum;
+
+            cardList = [];
+            //填充幸运牌
+            for(let i=0;i<luckyNum;i++){
+                const icon = luckyIcons[Math.floor(Math.random()*luckyIcons.length)];
+                cardList.push(icon);
+            }
+            //填充炸弹
+            for(let i=0;i<bombNum;i++){
+                cardList.push("💣");
+            }
+            //洗牌算法打乱数组
+            shuffleArray(cardList);
+            renderCards();
+        }
+
+        //洗牌函数
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+
+        //渲染卡牌到页面
+        function renderCards(){
+            const wrap = document.getElementById("cardWrap");
+            wrap.innerHTML = "";
+            cardList.forEach((icon, idx)=>{
+                const div = document.createElement("div");
+                div.className = "card-item";
+                div.onclick = function(e){pick(idx, this, e)};
+                div.innerHTML = `
+                    <div class="card-front">?</div>
+                    <div class="card-back">${icon}</div>
+                `;
+                wrap.appendChild(div);
+            })
+        }
 
         // 彩蛋系统
         function checkEgg(){
             if(level %5 ===0 && Math.random()>0.5){
                 eggActive = true;
                 const eggs = [
-                    "✨彩蛋触发：幸运加持，本局避开炸弹！",
-                    "✨彩蛋触发：双牌机会，选对就过关！",
-                    "✨彩蛋触发：炸弹概率减半！"
+                    "✨彩蛋触发：幸运加持，本关炸弹数量减少1个！",
+                    "✨彩蛋触发：双牌机会，选到幸运牌直接过关！",
+                    "✨彩蛋触发：幸运buff，炸弹概率降低！"
                 ]
                 const randomEgg = eggs[Math.floor(Math.random()*eggs.length)]
                 return randomEgg;
@@ -291,19 +331,21 @@
         function openRule(){document.getElementById("ruleModal").style.display="flex";}
         function closeRule(){document.getElementById("ruleModal").style.display="none";}
 
-        function pick(sel, cardDom, event){
+        function pick(index, cardDom, event){
             if(isClicking) return;
             isClicking = true;
             cardDom.classList.add("flip");
-
             const msgDom = document.getElementById('msg');
             const eggTip = checkEgg();
-            let isBomb = (Math.random() < bombChance);
-            if(eggActive) isBomb = false;
-            if(sel === 'D' && !eggActive) isBomb=true;
+            let isBomb = cardList[index] === "💣";
+
+            //彩蛋：幸运加持，减少炸弹
+            if(eggActive && isBomb){
+                isBomb = false;
+            }
 
             setTimeout(()=>{
-                // 20%概率触发树懒语录
+                //20%概率触发树懒语录
                 if(Math.random() < 0.20){
                     showSlothWord(event);
                 }else{
@@ -311,28 +353,37 @@
                 }
 
                 if(isBomb){
-                    msgDom.innerHTML = eggTip + "<br>💣炸弹！闯关失败，本关重来";
+                    msgDom.innerHTML = eggTip + "<br>💣炸弹！闯关失败，本关重新开始";
                     document.querySelector(".container").classList.add("shake");
                     setTimeout(()=>document.querySelector(".container").classList.remove("shake"),400);
+                    //失败，重新生成当前关卡卡牌
+                    setTimeout(()=>{
+                        initLevel();
+                        isClicking = false;
+                    },1400)
                 }else{
+                    msgDom.innerHTML = eggTip + "<br>🎉闯关成功！进入下一关";
+                    document.querySelector(".container").classList.add("glow");
+                    setTimeout(()=>document.querySelector(".container").classList.remove("glow"),1000);
+                    //通关，升级
                     level++;
-                    bombChance = Math.min(0.45, 0.25 + level*0.008);
-                    document.getElementById('level').innerText = level;
                     if(level > highScore){
                         highScore = level;
                         localStorage.setItem("luckyCardHigh", highScore);
                         document.getElementById("highScore").innerText = highScore;
                     }
-                    msgDom.innerHTML = eggTip + "<br>🎉闯关成功！进入下一关";
-                    document.querySelector(".container").classList.add("glow");
-                    setTimeout(()=>document.querySelector(".container").classList.remove("glow"),1000);
+                    //加载下一关卡牌
+                    setTimeout(()=>{
+                        initLevel();
+                        isClicking = false;
+                    },1400)
                 }
-                // 重置卡牌，允许下一轮点击
-                setTimeout(()=>{
-                    document.querySelectorAll(".card-item").forEach(c=>c.classList.remove("flip"))
-                    isClicking = false;
-                },1400)
             },650);
+        }
+
+        //页面加载初始化第一关
+        window.onload = function(){
+            initLevel();
         }
     </script>
 </body>
