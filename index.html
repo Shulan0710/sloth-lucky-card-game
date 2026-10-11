@@ -20,7 +20,7 @@
         }
 
         .container {
-            max-width: 600px;
+            max-width: 640px;
             margin: 0 auto;
         }
 
@@ -33,40 +33,62 @@
         .info-bar {
             display: flex;
             justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 8px;
             margin: 20px 0;
             font-size: 16px;
             color: #34495e;
             font-weight: 500;
         }
 
+        .progress-area {
+            width: 100%;
+            height: 12px;
+            background-color: #dde6f5;
+            border-radius: 999px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #5b86e5, #36d1dc);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
         .tip-text {
             color: #666;
             margin-bottom: 10px;
-            height: 24px;
+            min-height: 24px;
         }
 
         .btn-rule {
-            padding: 6px 14px;
+            padding: 8px 16px;
             border: none;
             background: #5b86e5;
             color: white;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
+            font-size:15px;
+            transition: 0.2s;
             margin-bottom:24px;
         }
-
-        /* 卡牌容器，自动自适应网格 */
-        .card-wrap {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-            gap: 14px;
-            margin: 30px 0;
-            perspective: 1000px;
+        .btn-rule:hover {
+            background:#4874d8;
         }
 
-        /* 卡牌核心3D样式 */
+        /* 卡牌容器，自适应网格 */
+        .card-wrap {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 14px;
+            margin: 30px 0;
+            perspective: 1200px;
+        }
+
+        /* 卡牌3D样式 */
         .card-item {
-            height: 120px;
+            height: 115px;
             position: relative;
             transform-style: preserve-3d;
             transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -77,18 +99,21 @@
         .card-item.flip {
             transform: rotateY(180deg);
         }
+        .card-item.disabled {
+            pointer-events:none;
+        }
 
         .card-front, .card-back {
             position: absolute;
             width: 100%;
             height: 100%;
-            border-radius: 14px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 26px;
+            font-size: 28px;
             font-weight: bold;
-            box-shadow: 0 8px 20px #00000020;
+            box-shadow: 0 6px 18px #00000022;
             backface-visibility: hidden;
         }
 
@@ -96,21 +121,20 @@
             background: linear-gradient(145deg, #5b86e5, #36d1dc);
             color: white;
         }
-
         .card-back {
-            background: #fff;
+            background: #ffffff;
             color: #2c3e50;
             transform: rotateY(180deg);
         }
 
-        .card-item:hover:not(.flip) {
-            transform: scale(1.03);
+        .card-item:hover:not(.flip):not(.disabled) {
+            transform: scale(1.04);
         }
 
         .result {
             font-size: 20px;
-            margin:20px 0;
-            min-height: 60px;
+            margin:24px 0;
+            min-height: 64px;
             font-weight: bold;
         }
 
@@ -135,7 +159,7 @@
             animation: glow 0.5s 2;
         }
 
-        /* 颜文字弹窗 */
+        /* 颜文字飘字 */
         .emoticon-popup {
             position: fixed;
             font-size: 32px;
@@ -148,11 +172,11 @@
             100% {opacity:0; transform: translateY(-120px);}
         }
 
-        /* 规则弹窗 */
+        /* 弹窗通用样式 */
         .modal {
             position: fixed;
             top:0;left:0;right:0;bottom:0;
-            background:rgba(0,0,0,0.4);
+            background:rgba(0,0,0,0.45);
             display:none;
             align-items:center;
             justify-content:center;
@@ -160,13 +184,25 @@
         }
         .modal-content{
             background:#fff;
-            padding:24px;
-            border-radius:16px;
-            max-width:360px;
+            padding:28px;
+            border-radius:20px;
+            max-width:400px;
+            box-shadow:0 10px 30px rgba(0,0,0,0.15);
         }
-        .modal-content h3{margin-bottom:12px;}
-        .modal-content p{text-align:left;line-height:1.6;color:#333;}
-        .close-modal{margin-top:16px;padding:6px 14px;border:none;background:#5b86e5;color:white;border-radius:8px;cursor:pointer;}
+        .modal-content h3{margin-bottom:16px; color:#2c3e50;}
+        .modal-content p{text-align:left;line-height:1.7;color:#333;}
+        .close-modal{margin-top:20px;padding:8px 18px;border:none;background:#5b86e5;color:white;border-radius:10px;cursor:pointer;font-size:15px;}
+        .close-modal:hover{background:#4874d8;}
+
+        /* 开场欢迎弹窗 */
+        .welcome-modal .modal-content{
+            text-align:center;
+        }
+        .welcome-text{
+            font-size:22px;
+            color:#2c3e50;
+            margin:10px 0 20px;
+        }
     </style>
 </head>
 <body>
@@ -176,23 +212,37 @@
             <div>当前关卡：<span id="level">1</span></div>
             <div>最高纪录：<span id="highScore">1</span></div>
             <div>卡牌数量：<span id="cardCount">2</span></div>
+            <div>目标安全牌：<span id="targetSafe">1</span></div>
+        </div>
+        <div class="progress-area">
+            <div class="progress-bar" id="progressBar"></div>
         </div>
         <button class="btn-rule" onclick="openRule()">📖游戏规则</button>
-        <div class="tip-text">选择一张卡牌翻开，小心炸弹💣</div>
+        <div class="tip-text">翻开安全卡牌，小心炸弹💣</div>
         <div class="card-wrap" id="cardWrap">
             <!-- JS动态生成卡牌 -->
         </div>
         <div class="result" id="msg"></div>
     </div>
 
+    <!-- 开场欢迎弹窗，页面加载自动弹出 -->
+    <div class="modal welcome-modal" id="welcomeModal">
+        <div class="modal-content">
+            <h3>✨树懒翻牌小游戏✨</h3>
+            <p class="welcome-text">本懒发力了…玩的开心…</p >
+            <button class="close-modal" onclick="closeWelcome()">开始游戏</button>
+        </div>
+    </div>
+
     <!-- 游戏规则弹窗 -->
     <div class="modal" id="ruleModal">
         <div class="modal-content">
             <h3>📖 游戏规则</h3>
-            <p>1. 第1关2张牌，每通关一关卡牌+2，最多24张<br>
-2. ⭐🍀💎=闯关成功；💣炸弹=失败，本关重开<br>
-3. 卡牌越多炸弹数量越多，类似扫雷<br>
-4. 每5关随机触发彩蛋，获得特殊增益。</p >
+            <p>1. 第1关2张牌，每通关一关卡牌+2，上限24张<br>
+2. 需要翻开总卡牌数量一半的安全牌才算通关<br>
+3. ⭐🍀💎=安全牌；💣炸弹=失败，本关重开<br>
+4. 牌越多炸弹数量越多，已经翻开的卡牌不能重复点击<br>
+5. 每5关有机会触发幸运彩蛋</p >
             <button class="close-modal" onclick="closeRule()">知道啦</button>
         </div>
     </div>
@@ -201,9 +251,11 @@
         let level = 1;
         let eggActive = false;
         let isClicking = false;
-        let cardList = []; //存储当前关卡卡牌内容
+        let cardList = []; //当前关卡卡牌
+        let safeOpened = 0; //已翻开安全牌数量
+        let targetSafe = 0; //需要翻开的安全牌目标
 
-        // ===== 扩充颜文字库 =====
+        // ===== 颜文字库 =====
         const successEmoji = [
             "٩(๑>◡<๑)۶", "(≧∇≦)ﾉ", "ヽ(✿ﾟ▽ﾟ)ノ", "(๑•̀ㅂ•́)و✧", "✧(≖ ◡ ≖✿)",
             "ヽ(°▽°)ノ", "(๑˃̵ᴗ˂̵)و", "☜(ﾟヮﾟ☜)", "(*´▽`*)", "ʕ•̀ω•́ʔ✧",
@@ -215,7 +267,7 @@
             "╮(╯▽╰)╭", "｡ﾟ(ﾟ´Д｀ﾟ)ﾟ｡", "(-ω-；)", "〒▽〒", "┌(。Д。)┐"
         ]
 
-        // ===== 树懒语录（带颜文字）=====
+        // ===== 树懒语录 =====
         const slothWords = [
             "树懒祝你天天开心 ʕ•ᴥ•ʔ",
             "树懒提醒你该喝水啦 (๑•̀ㅂ•́)و✧",
@@ -229,22 +281,26 @@
             "树懒觉得你超棒！ヾ(≧▽≦*)o"
         ]
 
-        // 幸运图标
         const luckyIcons = ["⭐","🍀","💎"];
 
-        // 读取本地存档最高分
+        //本地最高分存档
         let highScore = localStorage.getItem("luckyCardHigh") || 1;
         document.getElementById("highScore").innerText = highScore;
 
-        // 初始化当前关卡卡牌
+        //初始化关卡
         function initLevel(){
-            //卡牌数量：第1关2张，每关+2，上限24
             const maxCard = 24;
             const cardCount = Math.min(2 + (level-1)*2, maxCard);
             document.getElementById("cardCount").innerText = cardCount;
             document.getElementById("level").innerText = level;
 
-            //炸弹比例：卡牌总数 * 0.25，至少1个炸弹
+            //通关目标：卡牌总数一半
+            targetSafe = cardCount / 2;
+            document.getElementById("targetSafe").innerText = targetSafe;
+            safeOpened = 0;
+            updateProgress();
+
+            //炸弹数量：卡牌*0.25，最少1颗
             let bombNum = Math.max(1, Math.floor(cardCount * 0.25));
             let luckyNum = cardCount - bombNum;
 
@@ -258,12 +314,12 @@
             for(let i=0;i<bombNum;i++){
                 cardList.push("💣");
             }
-            //洗牌算法打乱数组
             shuffleArray(cardList);
             renderCards();
+            document.getElementById("msg").innerText = "";
         }
 
-        //洗牌函数
+        //洗牌算法
         function shuffleArray(arr) {
             for (let i = arr.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -271,7 +327,7 @@
             }
         }
 
-        //渲染卡牌到页面
+        //渲染卡牌
         function renderCards(){
             const wrap = document.getElementById("cardWrap");
             wrap.innerHTML = "";
@@ -287,13 +343,18 @@
             })
         }
 
-        // 彩蛋系统
+        //更新进度条
+        function updateProgress(){
+            const percent = (safeOpened / targetSafe) * 100;
+            document.getElementById("progressBar").style.width = percent + "%";
+        }
+
+        //彩蛋系统
         function checkEgg(){
             if(level %5 ===0 && Math.random()>0.5){
                 eggActive = true;
                 const eggs = [
                     "✨彩蛋触发：幸运加持，本关炸弹数量减少1个！",
-                    "✨彩蛋触发：双牌机会，选到幸运牌直接过关！",
                     "✨彩蛋触发：幸运buff，炸弹概率降低！"
                 ]
                 const randomEgg = eggs[Math.floor(Math.random()*eggs.length)]
@@ -303,7 +364,7 @@
             return "";
         }
 
-        // 弹出普通颜文字
+        //飘字
         function showEmoticon(isSuccess, event) {
             const popup = document.createElement('div');
             popup.className = "emoticon-popup";
@@ -315,7 +376,6 @@
             setTimeout(()=>popup.remove(),1200);
         }
 
-        // 弹出树懒语录
         function showSlothWord(event){
             const popup = document.createElement('div');
             popup.className = "emoticon-popup";
@@ -327,25 +387,26 @@
             setTimeout(()=>popup.remove(),1200);
         }
 
-        // 打开关闭规则弹窗
+        //弹窗开关
         function openRule(){document.getElementById("ruleModal").style.display="flex";}
         function closeRule(){document.getElementById("ruleModal").style.display="none";}
+        function closeWelcome(){document.getElementById("welcomeModal").style.display="none";}
 
         function pick(index, cardDom, event){
             if(isClicking) return;
+            if(cardDom.classList.contains("flip")) return;
             isClicking = true;
             cardDom.classList.add("flip");
+            cardDom.classList.add("disabled");
             const msgDom = document.getElementById('msg');
             const eggTip = checkEgg();
             let isBomb = cardList[index] === "💣";
 
-            //彩蛋：幸运加持，减少炸弹
             if(eggActive && isBomb){
                 isBomb = false;
             }
 
             setTimeout(()=>{
-                //20%概率触发树懒语录
                 if(Math.random() < 0.20){
                     showSlothWord(event);
                 }else{
@@ -353,37 +414,42 @@
                 }
 
                 if(isBomb){
-                    msgDom.innerHTML = eggTip + "<br>💣炸弹！闯关失败，本关重新开始";
+                    msgDom.innerHTML = eggTip + "<br>💣踩到炸弹！闯关失败，本关重新开始";
                     document.querySelector(".container").classList.add("shake");
                     setTimeout(()=>document.querySelector(".container").classList.remove("shake"),400);
-                    //失败，重新生成当前关卡卡牌
                     setTimeout(()=>{
                         initLevel();
                         isClicking = false;
                     },1400)
                 }else{
-                    msgDom.innerHTML = eggTip + "<br>🎉闯关成功！进入下一关";
-                    document.querySelector(".container").classList.add("glow");
-                    setTimeout(()=>document.querySelector(".container").classList.remove("glow"),1000);
-                    //通关，升级
-                    level++;
-                    if(level > highScore){
-                        highScore = level;
-                        localStorage.setItem("luckyCardHigh", highScore);
-                        document.getElementById("highScore").innerText = highScore;
-                    }
-                    //加载下一关卡牌
-                    setTimeout(()=>{
-                        initLevel();
+                    safeOpened++;
+                    updateProgress();
+                    if(safeOpened >= targetSafe){
+                        msgDom.innerHTML = eggTip + "<br>🎉全部目标达成！进入下一关";
+                        document.querySelector(".container").classList.add("glow");
+                        setTimeout(()=>document.querySelector(".container").classList.remove("glow"),1000);
+                        level++;
+                        if(level > highScore){
+                            highScore = level;
+                            localStorage.setItem("luckyCardHigh", highScore);
+                            document.getElementById("highScore").innerText = highScore;
+                        }
+                        setTimeout(()=>{
+                            initLevel();
+                            isClicking = false;
+                        },1400)
+                    }else{
+                        msgDom.innerText = eggTip + `✅安全牌！已翻开${safeOpened}/${targetSafe}`;
                         isClicking = false;
-                    },1400)
+                    }
                 }
             },650);
         }
 
-        //页面加载初始化第一关
+        //页面加载自动弹出欢迎框
         window.onload = function(){
             initLevel();
+            document.getElementById("welcomeModal").style.display="flex";
         }
     </script>
 </body>
